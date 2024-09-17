@@ -43,13 +43,15 @@
 
 import os
 from datetime import datetime
-from flask import Flask, render_template, request, jsonify, url_for, abort, flash, redirect
+from flask import Flask, render_template, request, jsonify, url_for, abort, flash, redirect, session
 from flask_sqlalchemy import SQLAlchemy  # 用於整合 SQLAlchemy ORM，以便更方便地與數據庫進行交互
 from flask_migrate import Migrate  # 數據庫遷移，幫助管理數據庫結構的變化
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from dotenv import load_dotenv # 用來讀取 .env 文件中的環境變量
 # 使用 werkzeug.security 進行密碼哈希和驗證
 from werkzeug.security import generate_password_hash, check_password_hash
+# 创建 Google 和 Facebook 的 OAuth 客户端
+from authlib.integrations.flask_client import OAuth
 
 
 # 載入 .env 文件中的環境變數
@@ -62,6 +64,35 @@ app.secret_key = os.getenv('SECRET_KEY')   # 設置應用的密鑰
 login_manager = LoginManager()  # 初始化 LoginManager
 login_manager.init_app(app)  # 將其與應用綁定
 login_manager.login_view = 'login_page'  # 設置未登入時的重定向頁面
+
+# 初始化 OAuth 客户端
+oauth = OAuth(app)
+
+# Google OAuth 配置
+google = oauth.register(
+    name='google',
+    client_id='YOUR_GOOGLE_CLIENT_ID',
+    client_secret='YOUR_GOOGLE_CLIENT_SECRET',
+    access_token_url='https://accounts.google.com/o/oauth2/token',
+    authorize_url='https://accounts.google.com/o/oauth2/auth',
+    authorize_params=None,
+    client_kwargs={'scope': 'openid email profile'},
+    redirect_uri='http://localhost:5000/auth/google/callback'
+)
+
+# Facebook OAuth 配置
+facebook = oauth.register(
+    name='facebook',
+    client_id='YOUR_FACEBOOK_CLIENT_ID',
+    client_secret='YOUR_FACEBOOK_CLIENT_SECRET',
+    access_token_url='https://graph.facebook.com/oauth/access_token',
+    authorize_url='https://www.facebook.com/dialog/oauth',
+    authorize_params=None,
+    client_kwargs={'scope': 'email'},
+    redirect_uri='http://localhost:5000/auth/facebook/callback'
+)
+
+
 
 # 配置 PostgreSQL 數據庫 URI
 # 從環境變量中讀取數據庫 URI
@@ -143,6 +174,7 @@ def login_page():
         return redirect(url_for('dashboard'))
     return render_template('login.html')
 
+
 # 模拟的登录成功后的页面
 @app.route("/dashboard")
 def dashboard():
@@ -161,9 +193,14 @@ def logout():
     flash('登出成功!', category='success')
     return redirect(url_for('login_page'))
 
+
+@app.route("/register")
+def register_page():
+    return render_template('register.html')
+
 # 增加新的使用者
-@app.route("/add_customer", methods=["POST"])
-def add_customer():
+@app.route("/register", methods=["POST"])
+def register():
     try:
         # 從請求中提取數據
         data = request.json
@@ -171,11 +208,22 @@ def add_customer():
         email = data.get("email")  # 對應的是 POST 請求中的 "email" 字段
         phone = data.get("phone")  # 對應的是 POST 請求中的 "phone" 字段
         password = data.get("password")  # 對應的是 POST 請求中的 "password" 字段
+        confirm_password = data.get("confirmPassword")
         role = data.get("role", "customer")  # 默認角色為 customer
         
         # 檢查是否所有必填欄位都有填寫
         if not name or not email or not password:
             return jsonify({"error": "Missing required fields"}), 400
+        
+        if password != confirm_password:
+            flash("密碼與確認密碼不匹配！", "danger")
+            return jsonify({"error": "Passwords do not match"}), 400
+
+        # 檢查用戶是否已經存在
+        existing_user = Customer.query.filter_by(email=email).first()
+        if existing_user:
+            flash("該電子郵件已經被註冊過了。", "warning")
+            return redirect(url_for('login_page'))
 
         hashed_password = generate_password_hash(password)  # 使用 werkzeug.security 生成密碼哈希
         
@@ -195,9 +243,11 @@ def add_customer():
         db.session.add(new_customer)
         db.session.commit()  # 提交更改
         
-        return jsonify({"message": "Customer added successfully!"}), 201
+        flash("註冊成功！請登入。", "success")
+        return redirect(url_for('login_page'))
     except Exception as e:
         db.session.rollback()  # 如果有錯誤，回滾事務
+        flash(f"註冊失敗：{str(e)}", "danger")
         return jsonify({"error": str(e)}), 500
 
 @app.route("/customers")
