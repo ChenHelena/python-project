@@ -14,23 +14,38 @@
   <!--  -->
   {% block style %}
   <!--  -->
+  <style>
+    .flash-messages {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1050; /* 确保 Flash 消息在其他内容上方 */
+    }
+
+    .alert-container {
+      margin: 0;
+    }
+  </style>
   {% endblock style %}
 </head>
 
 <body>
-  <!-- Top bar for search and options -->
-  {% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-  <div class="alert-container">
-    {% for category, message in messages %}
-    <div class="alert alert-{{ category }} alert-dismissible fade show mb-0" role="alert">
-      {{ message }}
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  <!-- Flash 消息显示 -->
+  <div class="flash-messages">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="alert-container">
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show mb-0" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endfor %}
     </div>
-    {% endfor %}
+    {% endif %}
+    {% endwith %}
   </div>
-  {% endif %}
-  {% endwith %}
   <section class="navbar navbar-light bg-light mb-3">
     <div class="container-fluid d-flex">
       <!-- logo start-->
@@ -82,7 +97,7 @@
         {% else %}
           <!-- 用户未登录，显示登录和注册按钮 -->
           <a href="{{ url_for('member_login') }}" class="btn btn-outline-success" type="button">登入</a>
-          <a href="#" class="btn btn-outline-success" type="button">註冊</a>
+          <a href="{{ url_for('register') }}" class="btn btn-outline-success" type="button">註冊</a>
         {% endif %}
       </div>
     </div>

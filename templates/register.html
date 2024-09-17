@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+<!-- -->
+{% block content %}
+<section class="vh-100">
+  <div class="container py-5 h-100">
+    <div class="row d-flex justify-content-center align-items-center h-100">
+      <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+        <div class="card shadow-2-strong" style="border-radius: 1rem">
+          <div class="card-body p-5 text-center" id="register-form">
+            <h3 class="mb-5">註冊</h3>
+
+            <!-- Name input -->
+            <div data-mdb-input-init class="form-outline mb-4">
+              <input type="text" id="name" name="name" class="form-control form-control-lg" />
+              <label class="form-label" for="name">用戶名</label>
+              <div class="invalid-feedback">
+                請輸入您的用戶名
+              </div>
+            </div>
+            
+            <!-- Email input -->
+            <div data-mdb-input-init class="form-outline mb-4">
+              <input type="email" id="email" name="email" class="form-control form-control-lg" />
+              <label class="form-label" for="email">Email</label>
+              <div class="invalid-feedback">
+                請輸入有效的 Email
+              </div>
+            </div>
+            
+            <!-- Password input -->
+            <div data-mdb-input-init class="form-outline mb-4">
+              <input type="password" id="password" name="password" class="form-control form-control-lg" />
+              <label class="form-label" for="password">密碼</label>
+              <div class="invalid-feedback">
+                請輸入密碼
+              </div>
+            </div>
+
+            <!-- Confirm Password input -->
+            <div data-mdb-input-init class="form-outline mb-4">
+              <input type="password" id="confirm-password" name="confirm-password" class="form-control form-control-lg" />
+              <label class="form-label" for="confirm-password">確認密碼</label>
+              <div class="invalid-feedback">
+                請再次輸入密碼
+              </div>
+            </div>
+
+            <button data-mdb-button-init data-mdb-ripple-init class="btn btn-primary btn-lg btn-block" type="button" id="register">
+              註冊
+            </button>
+
+            <hr class="my-4" />
+
+            <button data-mdb-button-init data-mdb-ripple-init class="btn btn-lg btn-block btn-primary"
+              style="background-color: #dd4b39" type="submit">
+              <i class="fab fa-google me-2"></i> 用GOOGLE 帳號註冊
+            </button>
+            <button data-mdb-button-init data-mdb-ripple-init class="btn btn-lg btn-block btn-primary mb-2"
+              style="background-color: #3b5998" type="submit">
+              <i class="fab fa-facebook-f me-2"></i> 用Facebook 帳號註冊
+            </button>
+            <div id="result"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock content %}
+<!-- -->
+{% block script %}
+<script>
+  document.getElementById('register').addEventListener('click', function () {
+    // 獲取表單中的資料
+    const name = document.getElementById('name');
+    const email = document.getElementById('email');
+    const password = document.getElementById('password');
+    const confirmPassword = document.getElementById('confirm-password');
+    let isValid = true;
+
+    // 重置先前的驗證狀態
+    name.classList.remove('is-invalid');
+    email.classList.remove('is-invalid');
+    password.classList.remove('is-invalid');
+    confirmPassword.classList.remove('is-invalid');
+
+    // 檢查每個必填欄位是否已填寫
+    if (!name.value) {
+      name.classList.add('is-invalid');
+      isValid = false;
+    }
+    if (!email.value || !validateEmail(email.value)) {
+      email.classList.add('is-invalid');
+      isValid = false;
+    }
+    if (!password.value) {
+      password.classList.add('is-invalid');
+      isValid = false;
+    }
+    if (!confirmPassword.value) {
+      confirmPassword.classList.add('is-invalid');
+      isValid = false;
+    }
+
+    // 比對 password 和 confirmPassword
+    if (password.value && confirmPassword.value && password.value !== confirmPassword.value) {
+      confirmPassword.classList.add('is-invalid');
+      const errorMessage = document.createElement('div');
+      errorMessage.className = 'invalid-feedback';
+      errorMessage.innerText = '密碼不一致';
+      if (!confirmPassword.nextElementSibling || !confirmPassword.nextElementSibling.classList.contains('invalid-feedback')) {
+        confirmPassword.parentElement.appendChild(errorMessage);
+      }
+      isValid = false;
+    }
+
+    // 如果所有欄位都有效，則執行註冊邏輯
+    if (isValid) {
+      // 發送註冊請求給後端
+      const formData = {
+        name: name.value,
+        email: email.value,
+        password: password.value,
+        confirmPassword: confirmPassword.value
+      };
+
+      fetch('/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      }).then(response => {
+        if (response.redirected) {
+          // 服务器返回重定向，直接跳转到重定向的页面
+          window.location.href = response.url;
+        } else if (response.ok) {
+          return response.json();
+        } else {
+          return response.json().then(errorData => {
+            alert('註冊失敗：' + errorData.error);
+          });
+        }
+      }).catch(error => {
+        console.error('註冊請求發生錯誤：', error);
+      });
+    }
+  });
+
+  // 用於驗證 Email 格式的函數
+  function validateEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(String(email).toLowerCase());
+  }
+</script>
+{% endblock script %}
