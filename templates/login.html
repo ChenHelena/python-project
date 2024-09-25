@@ -34,10 +34,10 @@
 
             <hr class="my-4" />
 
-            <button data-mdb-button-init data-mdb-ripple-init class="btn btn-lg btn-block btn-primary"
+            <a href="{{ url_for('routes.login_google') }}" data-mdb-button-init data-mdb-ripple-init class="btn btn-lg btn-block btn-primary"
               style="background-color: #dd4b39" type="submit">
               <i class="fab fa-google me-2"></i> 用GOOGLE 帳號登入
-            </button>
+            </a>
             <button data-mdb-button-init data-mdb-ripple-init class="btn btn-lg btn-block btn-primary mb-2"
               style="background-color: #3b5998" type="submit">
               <i class="fab fa-facebook-f me-2"></i>Sign in with facebook
@@ -52,6 +52,7 @@
 {% endblock content %}
 <!-- -->
 {% block script %}
+{{ super() }}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     const loginButton = document.getElementById("login");
@@ -70,26 +71,19 @@
           password: password,
         }),
       })
-        .then((response) => {
-          if (!response.ok) {
-            // 如果返回401，手动抛出错误
-            throw new Error("HTTP status " + response.status);
-          }
-          return response.json();
-        })
-        .then((data) => {
-          const resultDiv = document.getElementById("result");
-          if (data.status === "success") {
-            resultDiv.innerHTML = `<p style="color: green;">${data.message}</p>`;
-            // 登录成功，跳转到 dashboard 页面
-            window.location.href = data.redirect_url;
+        .then(response => response.json())
+        .then(response => {
+          // 显示成功消息并重定向到 dashboard 页面
+          displayFlashMessage('success', response.message);
+          if (response.redirect_url) {
+            window.location.href = response.redirect_url;  // 确保 redirect_url 在服务器响应中存在
           } else {
-            resultDiv.innerHTML = `<p style="color: red;">${data.message}</p>`;
+            console.error('Redirect URL 找不到');
           }
         })
-        .catch((error) => {
-          const resultDiv = document.getElementById("result");
-          resultDiv.innerHTML = `<p style="color: red;">Error: ${error}</p>`;
+        .catch(error => {
+          console.error('网络请求发生错误：', error);
+          displayFlashMessage('danger', '网络请求发生错误，请稍后再试。');
         });
     });
   });

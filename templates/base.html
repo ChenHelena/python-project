@@ -31,8 +31,7 @@
 </head>
 
 <body>
-  <!-- Flash 消息显示 -->
-  <div class="flash-messages">
+  <div id="flash-messages" class="flash-messages">
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
     <div class="alert-container">
@@ -46,6 +45,7 @@
     {% endif %}
     {% endwith %}
   </div>
+
   <section class="navbar navbar-light bg-light mb-3">
     <div class="container-fluid d-flex">
       <!-- logo start-->
@@ -61,7 +61,7 @@
           <div class="offcanvas-body">
             <div class="d-grid gap-2 mx-auto">
               <a class="btn btn-primary" type="button">註冊</a>
-              <a href="{{url_for('member_login')}}"  class="btn btn-outline-primary" type="button">登入</a>
+              <a href="{{ url_for('routes.login_page') }}"  class="btn btn-outline-primary" type="button">登入</a>
             </div>
             <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
               <li class="nav-item">
@@ -76,7 +76,7 @@
             </ul>
           </div>
         </div>
-        <a class="navbar-brand" href="{{url_for('index')}}">GO_PigOut</a>
+        <a class="navbar-brand" href="{{url_for('routes.index')}}">GO_PigOut</a>
       </div>
       <!-- logo end -->
       <!-- search  start-->
@@ -93,11 +93,11 @@
         </button>
         {% if current_user.is_authenticated %}
           <!-- 用户已登录，显示登出按钮 -->
-          <a href="{{ url_for('logout') }}" class="btn btn-outline-success" type="button">登出</a>
+          <a href="{{ url_for('routes.logout') }}" class="btn btn-outline-success" type="button">登出</a>
         {% else %}
           <!-- 用户未登录，显示登录和注册按钮 -->
-          <a href="{{ url_for('member_login') }}" class="btn btn-outline-success" type="button">登入</a>
-          <a href="{{ url_for('register') }}" class="btn btn-outline-success" type="button">註冊</a>
+          <a href="{{ url_for('routes.login_page') }}" class="btn btn-outline-success" type="button">登入</a>
+          <a href="{{ url_for('routes.register') }}" class="btn btn-outline-success" type="button">註冊</a>
         {% endif %}
       </div>
     </div>
@@ -119,6 +119,19 @@
   <!-- 客製化other_element 區塊 start  -->
   {% block script %}
   <!-- 客製化other_element 區塊  end-->
+  <script>
+    // 用于显示 Flash 消息的函数
+    function displayFlashMessage(type, message) {
+      const flashContainer = document.getElementById('flash-messages');
+      if (flashContainer) {
+        const flashMessage = document.createElement('div');
+        flashMessage.className = `alert alert-${type} alert-dismissible fade show`; //category 決定訊息的樣式（例如 alert-success 或 alert-danger），message 是實際的內容
+        flashMessage.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`;
+        flashContainer.appendChild(flashMessage);
+        setTimeout(() => flashMessage.remove(), 5000);  // 5秒后移除消息
+      }
+    }
+  </script>
   {% endblock script %}
 </body>
 

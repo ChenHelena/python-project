@@ -69,8 +69,10 @@
 {% endblock content %}
 <!-- -->
 {% block script %}
+{{ super() }}
 <script>
-  document.getElementById('register').addEventListener('click', function () {
+  document.getElementById('register').addEventListener('click', function (event) {
+    event.preventDefault();
     // 獲取表單中的資料
     const name = document.getElementById('name');
     const email = document.getElementById('email');
@@ -130,20 +132,29 @@
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(formData)
-      }).then(response => {
-        if (response.redirected) {
-          // 服务器返回重定向，直接跳转到重定向的页面
-          window.location.href = response.url;
-        } else if (response.ok) {
-          return response.json();
-        } else {
-          return response.json().then(errorData => {
-            alert('註冊失敗：' + errorData.error);
-          });
-        }
-      }).catch(error => {
-        console.error('註冊請求發生錯誤：', error);
-      });
+      }).then(response => response.json())
+        .then(response => {
+          console.log('Response:', response);
+          if (response.status === "success") {
+            // 如果返回的是成功状态，可以进一步检查是否是验证邮件成功
+            if (response.type === "verification_email_sent") {
+              displayFlashMessage('success', '驗證郵件已發送！請檢查您的郵箱以完成註冊');
+            } else {
+              displayFlashMessage('success', '註冊成功！');
+            }
+          } else {
+            // 根据消息内容来确定是否是注册失败还是验证邮件发送失败
+            if (response.message.includes("驗證發送失敗")) {
+              displayFlashMessage('danger', '驗證郵件發送失敗。請稍後再試。');
+            } else {
+              displayFlashMessage('danger', response.message || '註冊失敗');
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Registration request error:', error);
+          displayFlashMessage('danger', '註冊失敗');
+        });
     }
   });
 
