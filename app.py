@@ -1,47 +1,3 @@
-# from flask import Flask, render_template, request, jsonify, url_for
-# from flask_login import LoginManager
-# login_manager = LoginManager()
-# app=Flask(__name__)
-
-# me1 = {
-#     'email': 'jj@gmail.com',
-#     'password': '123'
-# }
-
-# @app.route("/")
-# def index():
-#     return render_template('index.html')
-
-# @app.route("/login", methods=['POST'])
-# def member_login():
-#     data = request.json #檢查接收到的內容
-#     print(f"Received data: {data}")
-
-#     email = data.get("email")
-#     password = data.get("password")
-
-#     if email == me1['email'] and password == me1['password']:
-#         # 登录成功，重定向到另一个页面（例如 "/dashboard"）
-#         return jsonify({"status": "success", "message": "Login successful!", "redirect_url": url_for('dashboard')}), 200
-#     else:
-#         # 登录失败，返回 401 状态码和错误消息
-#         return jsonify({"status": "error", "message": "Invalid credentials, please try again."}), 401
-# # 返回登录页面
-# @app.route("/login")
-# def login_page():
-#     return render_template('login.html')
-
-# # 模拟的登录成功后的页面
-# @app.route("/dashboard")
-# def dashboard():
-#     return render_template('dashboard.html')
-
-    
-# if __name__ =='__main__':
-#     app.run(debug=True)
-
-
-
 import os
 from datetime import datetime
 from flask import Blueprint, Flask, render_template, request, jsonify, url_for, abort, flash, redirect, session
@@ -105,5 +61,4 @@ def create_app():
 if __name__ == "__main__":
     app = create_app()
     app.run(debug=True)
-
 

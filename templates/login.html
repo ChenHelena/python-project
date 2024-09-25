@@ -52,7 +52,9 @@
 {% endblock content %}
 <!-- -->
 {% block script %}
+
 {{ super() }}
+
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     const loginButton = document.getElementById("login");
