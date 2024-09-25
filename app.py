@@ -81,7 +81,6 @@ def create_app():
 
     # 配置 PostgreSQL 數據庫 URI
     # 從環境變量中讀取數據庫 URI
-    # app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres@localhost:5432/pigout_db'
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 
     # 禁用 SQLAlchemy 的對象修改追蹤功能，以提高性能並減少內存使用

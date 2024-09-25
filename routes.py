@@ -178,7 +178,7 @@ def register():
 
     except Exception as e:
         db.session.rollback()  # 如果有錯誤，回滾事務
-        return jsonify({"status": "error", "message": f"註冊失敗： {str(e)}"}), 500
+        return jsonify({"status": "error", "message": f"註冊失敗： 請稍後再試。"}), 500
 
 
 # 定义发送验证邮件的函数
@@ -199,7 +199,7 @@ def send_verification_email(email):
             current_app.extensions['mail'].send(msg)
         return {"status": "success", "message": "Verification email sent successfully."}
     except Exception as e:
-        return jsonify({"status": "error", "message": f"Failed to send email: {str(e)}"})
+        return jsonify({"status": "error", "message": f"Failed to send email: 請稍後再試。"})
 
 # 定义验证邮件的路由
 @routes_bp.route('/verify/<email>', methods=['GET'])
@@ -264,5 +264,5 @@ def login_google():
         current_app.logger.info(f"Redirect URI: {redirect_uri}")
         return google.authorize_redirect(redirect_uri)  # 重定向用戶到 Google 的授權頁面
     except Exception as e:
-        current_app.logger.error(f"error:{str(e)}")
+        current_app.logger.error(f"error:請稍後再試。")
         return "Error", 500
