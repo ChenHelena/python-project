@@ -1,12 +1,7 @@
 import os
-from datetime import datetime
-from flask import Blueprint, Flask, render_template, request, jsonify, url_for, abort, flash, redirect, session
-from flask_sqlalchemy import SQLAlchemy  # 用於整合 SQLAlchemy ORM，以便更方便地與數據庫進行交互
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask import Flask
 from dotenv import load_dotenv # 用來讀取 .env 文件中的環境變量
-# 使用 werkzeug.security 進行密碼哈希和驗證
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_mail import Mail, Message
+from flask_mail import Mail
 from models import db, migrate
 # 从 routes 导入蓝图
 from routes import routes_bp, init_app
@@ -16,7 +11,7 @@ from routes import routes_bp, init_app
 # 邮件初始化
 mail = Mail()
 
-
+# 定義 create_app 函數，這是 Flask 的工廠模式，用於創建並配置應用實例
 def create_app():
 
     # 載入 .env 文件中的環境變數
@@ -45,12 +40,12 @@ def create_app():
     # 1. 檢查資料庫連線配置
     print(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
 
-    # 初始化扩展
+    # 初始化扩展，init_app() 函數調用 Flask 擴展（SQLAlchemy、Flask-Migrate 和 Flask-Mail）的初始化方法
     db.init_app(app)
     migrate.init_app(app, db)
     mail.init_app(app)
 
-    # 调用 init_app 初始化 LoginManager
+    # 调用 init_app 初始化 LoginManager，調用 routes.py 的 init_app() 函數
     init_app(app)
 
     # 注册蓝图

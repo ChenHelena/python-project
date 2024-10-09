@@ -1,0 +1,160 @@
+{% extends "shared/base.html" %}
+<!-- -->
+{% block content %}
+<section class="vh-100">
+  <div class="container py-5 h-100">
+    <div class="row d-flex justify-content-center align-items-center h-100">
+      <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+        <div class="card shadow-2-strong" style="border-radius: 1rem">
+          <div class="card-body p-5 text-center" id="login-form">
+            <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="pills-home-tab"  data-bs-toggle="pill" data-bs-target="#pills-home" onclick="selectRole('customer')" type="button" role="tab" data-role="customer"
+                  aria-controls="pills-home" aria-selected="false">
+                  消費者登入
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pills-profile-tab" data-bs-toggle="pill" data-bs-target="#pills-profile" onclick="selectRole('vendor')" type="button" role="tab" data-role="vendor" aria-controls="pills-profile" aria-selected="false">商家登入</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pills-contact-tab" data-bs-toggle="pill" data-bs-target="#pills-contact" onclick="selectRole('delivery')" type="button" role="tab" data-role="delivery" aria-controls="pills-contact" aria-selected="false">外送員登入</button>
+              </li>
+            </ul>
+            <h3 class="mb-5">登入</h3>
+            <div class="tab-content" id="pills-tabContent">
+              <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab"
+                tabindex="0">
+                <!-- Consumer Login Form -->
+                <div class="form-outline mb-4">
+                  <input type="email" id="email" name="email" class="form-control form-control-lg" />
+                  <label class="form-label" for="email">Email</label>
+                </div>
+                <div class="form-outline mb-4">
+                  <input type="password" id="password" name="password" class="form-control form-control-lg" />
+                  <label class="form-label" for="password">密碼</label>
+                </div>
+                <button class="btn btn-primary btn-lg btn-block" type="button" id="login">登入</button>
+                <hr class="my-4" />
+                <!-- Social Login Options -->
+                <a href="javascript:void(0);" onclick="loginWithGoogle()" class="btn btn-lg btn-block btn-primary"
+                  style="background-color: #dd4b39" type="submit">
+                  <i class="fab fa-google me-2"></i> 用GOOGLE 帳號登入
+                </a>
+              </div>
+              <div class="tab-pane fade" id="pills-profile" role="tabpanel" aria-labelledby="pills-profile-tab"
+                tabindex="0">
+                <!-- Vendor Login Form -->
+                <div class="form-outline mb-4">
+                  <input type="email" id="vendor-email" name="vendor-email" class="form-control form-control-lg" />
+                  <label class="form-label" for="vendor-email">Email</label>
+                </div>
+                <div class="form-outline mb-4">
+                  <input type="password" id="vendor-password" name="vendor-password"
+                    class="form-control form-control-lg" />
+                  <label class="form-label" for="vendor-password">密碼</label>
+                </div>
+                <button class="btn btn-primary btn-lg btn-block" type="button" id="vendor-login">登入</button>
+                <hr class="my-4" />
+                <!-- Social Login Options -->
+                <a href="javascript:void(0);" onclick="loginWithGoogle()" class="btn btn-lg btn-block btn-primary"
+                  style="background-color: #dd4b39" type="submit">
+                  <i class="fab fa-google me-2"></i> 用GOOGLE 帳號登入
+                </a>
+              </div>
+              <div class="tab-pane fade" id="pills-contact" role="tabpanel" aria-labelledby="pills-contact-tab"
+                tabindex="0">
+                <!-- Delivery Login Form -->
+                <div class="form-outline mb-4">
+                  <input type="email" id="delivery-email" name="delivery-email" class="form-control form-control-lg" />
+                  <label class="form-label" for="delivery-email">Email</label>
+                </div>
+                <div class="form-outline mb-4">
+                  <input type="password" id="delivery-password" name="delivery-password"
+                    class="form-control form-control-lg" />
+                  <label class="form-label" for="delivery-password">密碼</label>
+                </div>
+                <button class="btn btn-primary btn-lg btn-block" type="button" id="delivery-login">登入</button>
+                <hr class="my-4" />
+                <!-- Social Login Options -->
+                <a href="javascript:void(0);" onclick="loginWithGoogle()" class="btn btn-lg btn-block btn-primary"
+                  style="background-color: #dd4b39" type="submit">
+                  <i class="fab fa-google me-2"></i> 用GOOGLE 帳號登入
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock content %}
+<!-- -->
+{% block script %}
+
+{{ super() }}
+<script>
+  document.getElementById('login').addEventListener('click', function (event) {
+      event.preventDefault();
+
+      // 獲取表單中的資料
+      const email = document.getElementById('email');
+      const password = document.getElementById('password');
+      const role = selectedRole;  // 获取已选中的角色
+      let isValid = true;
+
+      // 重置先前的驗證狀態
+      email.classList.remove('is-invalid');
+      password.classList.remove('is-invalid');
+
+      // 檢查每個必填欄位是否已填寫
+      if (!email.value || !validateEmail(email.value)) {
+        email.classList.add('is-invalid');
+        isValid = false;
+      }
+      if (!password.value) {
+        password.classList.add('is-invalid');
+        isValid = false;
+      }
+
+      // 如果所有欄位都有效，則執行登入邏輯
+      if (isValid) {
+        // 發送登入請求給後端，包含角色
+        const formData = {
+          email: email.value,
+          password: password.value,
+          role: role  // 添加角色信息
+        };
+
+        fetch('/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        })
+          .then(response => response.json())
+          .then(response => {
+            console.log('Response:', response);
+            if (response.status === "success") {
+              // 如果返回的是成功状态，跳转到指定页面
+              if (response.redirect_url) {
+                window.location.href = response.redirect_url;  // 确保 redirect_url 在服务器响应中存在
+                displayFlashMessage('success', '登入成功！');
+              } else {
+                console.log('Redirect URL 找不到');
+              }
+            } else {
+              // 根据服务器返回的错误消息显示给用户
+              displayFlashMessage('danger', response.message || '登入失敗');
+            }
+          })
+          .catch(error => {
+            console.error('Login request error:', error);
+            displayFlashMessage('danger', '登入失敗');
+          });
+      }
+    });
+</script>
+{% endblock script %}

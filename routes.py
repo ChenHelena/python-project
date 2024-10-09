@@ -4,7 +4,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_mail import Message
 from datetime import datetime
-from models import Customer, db
+from models import Customer, DeliveryPerson, Vendor, db
 from authlib.integrations.flask_client import OAuth
 from flask_login import LoginManager
 
@@ -33,7 +33,13 @@ login_manager = LoginManager()  # 初始化 LoginManager
 # 這個函數用於通過 user_id 加載用戶對象，並與登入系統綁定
 @login_manager.user_loader
 def load_user(user_id):
-    return Customer.query.get(int(user_id))
+    role = session.get('role')  # 从 session 获取用户角色
+    if role == 'customer':
+        return Customer.query.get(user_id)
+    elif role == 'vendor':
+        return Vendor.query.get(user_id)
+    elif role == 'delivery':
+        return DeliveryPerson.query.get(user_id)
 
 # 定义初始化函数
 def init_app(app):
@@ -51,6 +57,11 @@ def index():
 def member_login():
     data = request.json  # 從 POST 請求中獲取 JSON 數據
     print(f"Received data: {data}")
+    role = request.args.get("role")  # 从查询参数获取 role
+    print(f"Received role: {role}")
+
+    if not role:
+        return jsonify({"status": "error", "message": "Role is required"}), 400
 
     email = data.get("email")
     password = data.get("password")
@@ -60,13 +71,21 @@ def member_login():
         return jsonify({"status": "error", "message": "Email and password are required"}), 400
 
     # 從數據庫查找用戶
-    user = Customer.query.filter_by(email=email).first()  # 使用 SQLAlchemy 查询数据库
+    # 根据角色来查询不同的表
+    if role == 'vendor':
+        user = Vendor.query.filter_by(email=email).first()
+    elif role == 'deliveryPerson':
+        user = DeliveryPerson.query.filter_by(email=email).first()
+    elif role == 'customer':
+        user = Customer.query.filter_by(email=email).first()
     print(f"User found: {user}")
     if user:
         # 仅在用户存在时检查密码是否匹配，是 Werkzeug 提供的函数，用于密码验证
         if check_password_hash(user.password, password):
+            session['role'] = role
             # 如果密码匹配，则登录用户
             login_user(user)
+            print(f"User {user.email} logged in.")
             return jsonify({"status": "success", "message": "Login successful!", "redirect_url": url_for('routes.dashboard')}), 200
         else:
             # 如果密码不匹配，则返回错误消息
@@ -76,24 +95,25 @@ def member_login():
         return jsonify({"status": "error", "message": "用戶不存在"}), 401
 
 
-# 返回登录页面
+# 消費者返回登录页面
 @routes_bp.route("/login")
 def login_page():
+    print(f"User authenticated: {current_user.is_authenticated}")
     if current_user.is_authenticated:
         return redirect(url_for('routes.dashboard'))
-    return render_template('login.html')
-
+    return render_template('shared/login.html')
 
 # 模拟的登录成功后的页面
 @routes_bp.route("/dashboard")
+@login_required  # 需要用户登录
 def dashboard():
-    if 'email' in session:
-        return render_template('dashboard.html', email=session['email'])
+    print(f"Current user: {current_user}")
+    if current_user.is_authenticated:
+        print(f"User email: {current_user.email}")  # 输出 email
+        return render_template('dashboard.html', email=current_user.email, user=current_user)
     return redirect(url_for('routes.index'))
 
 # 自定义404页面
-
-
 @routes_bp.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
@@ -110,13 +130,14 @@ def logout():
 
 @routes_bp.route("/register")
 def register_page():
-    return render_template('register.html')
+    return render_template('shared/register.html')
 
 
 # 增加新的使用者
 @routes_bp.route("/register", methods=["POST"])
 def register():
     try:
+        current_app.logger.info(f"Role in session: {session.get('role')}")
         # 從請求中提取數據
         data = request.json
         name = data.get("name")  # 對應的是 POST 請求中的 "name" 字段
@@ -124,7 +145,9 @@ def register():
         phone = data.get("phone")  # 對應的是 POST 請求中的 "phone" 字段
         password = data.get("password")  # 對應的是 POST 請求中的 "password" 字段
         confirm_password = data.get("confirmPassword")
-        role = data.get("role", "customer")  # 默認角色為 customer
+        role = session.get('role')  # 默認角色為 customer
+        current_app.logger.info(f"Role received in session: {role}")
+
 
         # 检查是否所有必填字段都填写
         if not name or not email or not password or not confirm_password:
@@ -134,26 +157,29 @@ def register():
             return jsonify({"status": "error", "message": "Passwords do not match"}), 400
 
         # 检查用户是否已存在
-        existing_user = Customer.query.filter_by(email=email).first()
+        if role == 'vendor':
+            existing_user = Vendor.query.filter_by(email=email).first()
+        elif role == 'delivery':
+            existing_user = DeliveryPerson.query.filter_by(email=email).first()
+        elif role == 'customer':
+            existing_user = Customer.query.filter_by(email=email).first()
+
         if existing_user:
             return jsonify({"status": "error", "message": "信箱已經註冊過"}), 400
 
         hashed_password = generate_password_hash(
             password)  # 使用 werkzeug.security 生成密碼哈希
 
-        # 創建新的 Customer 實例
-        new_customer = Customer(
-            name=name,
-            email=email,
-            phone=phone,
-            password=hashed_password,
-            is_verified=False,  # 初始設置為未驗證
-            role=role,
-            created_at=datetime.utcnow()
-        )
+        # 創建新的實例
+        if role == 'vendor':
+            new_user = Vendor(name=name, email=email, phone=phone, password=hashed_password, is_verified=False, role=role, created_at=datetime.utcnow())
+        elif role == 'delivery':
+            new_user = DeliveryPerson(name=name, email=email, phone=phone,           password=hashed_password, is_verified=False, role=role, created_at=datetime.utcnow())
+        else:
+            new_user = Customer(name=name, email=email, phone=phone,password=hashed_password, is_verified=False, role=role, created_at=datetime.utcnow())
 
         # 將新使用者添加到資料庫
-        db.session.add(new_customer)
+        db.session.add(new_user)
         db.session.commit()  # 提交更改
 
         # 發送驗證郵件
@@ -197,22 +223,30 @@ def send_verification_email(email):
     try:
         with current_app.app_context():  # 确保在应用上下文中发送邮件
             current_app.extensions['mail'].send(msg)
-        return {"status": "success", "message": "Verification email sent successfully."}
+        return jsonify({"status": "success", "message": "Verification email sent successfully."})
     except Exception as e:
         return jsonify({"status": "error", "message": f"Failed to send email: 請稍後再試。"})
 
 # 定义验证邮件的路由
 @routes_bp.route('/verify/<email>', methods=['GET'])
 def verify_email(email):
-    user = Customer.query.filter_by(email=email).first()
+    current_app.logger.info(f"Verifying email: {email}")  # 添加调试信息
+    user = Customer.query.filter_by(email=email).first() or \
+        Vendor.query.filter_by(email=email).first() or \
+        DeliveryPerson.query.filter_by(email=email).first()
+
     if user:
-        if user.is_verified:
-            return jsonify({"status": "error", "message": "User not found"}), 404
+        if not user.is_verified:
+            user.is_verified = True  # 将用户的is_verified状态设置为True
+            db.session.commit()  # 提交数据库更改
+            flash("验证成功，请登录。", category='success')  # 显示验证成功消息
         else:
-            user.is_verified = True
-            db.session.commit()
-            return jsonify({"status": "error", "message": "User already verified"}), 400
-    return redirect(url_for('routes.login_page'))  # 将用户重定向到登录页面
+            flash("邮箱已验证，请直接登录。", category='info')  # 如果已验证，提示用户直接登录
+
+        return redirect(url_for('routes.login_page'))  # 重定向到登录页面
+    else:
+        flash("未找到用户，请重新注册。", category='danger')  # 如果未找到用户，显示相应消息
+        return redirect(url_for('routes.register'))  # 重定向到注册页面
 
 
 @routes_bp.route("/customers")
@@ -236,32 +270,84 @@ def get_customers():
 @routes_bp.route("/authorize/google")
 def authorize_google():
     token = google.authorize_access_token()  # 從 Google 拿到訪問令牌
-    current_app.logger.info(f"Token: {token}")
     user_info = token['userinfo']
     current_app.logger.info(f"User info: {user_info}")
     email = user_info['email']
     name = user_info['name']
+    role = session.get('role')
+    action = request.args.get('action')
 
-    user = Customer.query.filter_by(email=email).first()  # 從數據庫查找該 email 的用戶
-    if not user:  # 如果用戶不存在，則創建新用戶
-        user = Customer(email=email, name=name)
+    current_app.logger.info(f"Role from authorize_google: {role}")
+
+    if role not in ['delivery', 'vendor', 'customer']:
+        flash('無效的使用者', category='danger')
+        return jsonify({"status": "danger", "message": "無效的使用者"}), 400  # 处理无效角色
+    
+    # 查找用户
+    if role == 'delivery':  # 如果是外送员
+        user = DeliveryPerson.query.filter_by(email=email).first()
+    elif role == 'vendor':  # 如果是商家
+        user = Vendor.query.filter_by(email=email).first()
+    elif role == 'customer':  # 如果是消费者
+        user = Customer.query.filter_by(email=email).first()
+    else:
+        return "Invalid role", 400  # 处理无效角色
+
+    if action == 'login':
+        if user:
+            # 用户已存在，直接登录
+            login_user(user) 
+            flash("欢迎回来！", category='success')  # 显示欢迎消息
+            return redirect(url_for('routes.dashboard'))  # 跳转到主页
+        else:
+            flash("用户不存在，请注册。", category='danger')
+            return redirect(url_for('routes.register'))  # 跳转到注册页面
+    elif action == 'register':
+        if user:
+            flash("用户已存在，正在跳转到登录页面。", category='info')
+            return redirect(url_for('routes.login_page'))  # 跳转到登录页面
+        else:
+            # 用户不存在，创建新用户并登录
+            if role == 'delivery':
+                user = DeliveryPerson(
+                    email=email, name=name, role=role, is_verified=False)
+            elif role == 'vendor':
+                user = Vendor(email=email, name=name,
+                              role=role, is_verified=False)
+            elif role == 'customer':
+                user = Customer(email=email, name=name,
+                                role=role, is_verified=False)
+
+
         db.session.add(user)
         db.session.commit()
+        send_verification_email(user.email)  # 发送验证邮件
+        flash("已发送验证邮件，请检查您的邮箱。", category='info')  # 添加发送邮件的消息
 
-    session['email'] = email
-    session['oauth_token'] = token
-
-    return redirect(url_for('routes.dashboard'))
+        return redirect(url_for('routes.register'))
 
 # Google 登錄重定向
-
-
 @routes_bp.route("/login/google")
 def login_google():
     try:
+        role = request.args.get('role')
+        session['role'] = role
         redirect_uri = url_for(
-            'routes.authorize_google', _external=True)  # 構建 Google 重定向 URI
-        current_app.logger.info(f"Redirect URI: {redirect_uri}")
+            'routes.authorize_google', _external=True) + '?action=login' # 添加查询参数  # 構建 Google 重定向 URI
+        return google.authorize_redirect(redirect_uri)  # 重定向用戶到 Google 的授權頁面
+    except Exception as e:
+        current_app.logger.error(f"error:請稍後再試。")
+        return "Error", 500
+    
+# Google 註冊重定向
+@routes_bp.route("/register/google")
+def login_register():
+    try:
+        role = request.args.get('role')
+        session['role'] = role
+        redirect_uri = url_for(
+            # 添加查询参数  # 構建 Google 重定向 URI
+            'routes.authorize_google', _external=True) + '?action=register'
         return google.authorize_redirect(redirect_uri)  # 重定向用戶到 Google 的授權頁面
     except Exception as e:
         current_app.logger.error(f"error:請稍後再試。")

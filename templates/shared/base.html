@@ -7,26 +7,15 @@
   <title>GO_PigOut</title>
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- 引用自定義 CSS -->
+  <link href="{{ url_for('static', filename='css/all.css') }}" rel="stylesheet" />
   <!--  -->
   {% block css %}
   <!--  -->
   {% endblock css %}
   <!--  -->
   {% block style %}
-  <!--  -->
-  <style>
-    .flash-messages {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 1050; /* 确保 Flash 消息在其他内容上方 */
-    }
 
-    .alert-container {
-      margin: 0;
-    }
-  </style>
   {% endblock style %}
 </head>
 
@@ -67,10 +56,10 @@
                 <a class="nav-link active" aria-current="page" href="#">建立企業帳戶</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#">新增您的餐廳</a>
+                <a class="nav-link" href="{{ url_for('routes.login_page') }}">新增您的餐廳</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#">註冊成為合作外送夥伴</a>
+                <a class="nav-link" href="{{ url_for('routes.login_page') }}">註冊成為合作外送夥伴</a>
               </li>
             </ul>
           </div>
@@ -86,7 +75,9 @@
       </div>
       <!-- search  end-->
       <!-- 購物車  start-->
-      <div>
+      <div class="d-flex gap-2">
+        <div class="d-flex align-items-center px-2">{{ current_user.name }}</div>
+        <div class="d-flex align-items-center px-2">{{ current_user.role }}</div>
         <button class="btn btn-outline-success" type="button">
           購物車
         </button>
@@ -96,7 +87,7 @@
         {% else %}
           <!-- 用户未登录，显示登录和注册按钮 -->
           <a href="{{ url_for('routes.login_page') }}" class="btn btn-outline-success" type="button">登入</a>
-          <a href="{{ url_for('routes.register') }}" class="btn btn-outline-success" type="button">註冊</a>
+          <a href="{{ url_for('routes.register_page') }}" class="btn btn-outline-success" type="button">註冊</a>
         {% endif %}
       </div>
     </div>
@@ -113,24 +104,13 @@
     {% endblock otherelement %}
   </div>
   <!-- Bootstrap JS -->
-
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.js"></script>
   <!-- 客製化other_element 區塊 start  -->
   {% block script %}
   <!-- 客製化other_element 區塊  end-->
-  <script>
-    // 用于显示 Flash 消息的函数
-    function displayFlashMessage(type, message) {
-      const flashContainer = document.getElementById('flash-messages');
-      if (flashContainer) {
-        const flashMessage = document.createElement('div');
-        flashMessage.className = `alert alert-${type} alert-dismissible fade show`; //category 決定訊息的樣式（例如 alert-success 或 alert-danger），message 是實際的內容
-        flashMessage.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`;
-        flashContainer.appendChild(flashMessage);
-        setTimeout(() => flashMessage.remove(), 5000);  // 5秒后移除消息
-      }
-    }
-  </script>
+  <script src="{{ url_for('static', filename='js/all.js') }}"></script>
   {% endblock script %}
 </body>
 

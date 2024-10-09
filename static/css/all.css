@@ -1,0 +1,11 @@
+.flash-messages {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1050; /* 确保 Flash 消息在其他内容上方 */
+}
+
+.alert-container {
+  margin: 0;
+}
