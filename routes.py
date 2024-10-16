@@ -51,6 +51,10 @@ def init_app(app):
 def index():
     return render_template('index.html')
 
+@routes_bp.route("/order")
+def order():
+    return render_template('customer/order.html')
+
 
 # RESTful API 登录端点
 @routes_bp.route("/login", methods=["POST"])
