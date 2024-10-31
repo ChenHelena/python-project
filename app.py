@@ -1,19 +1,24 @@
 import os
+import sys
+sys.path.append('/Users/helenachen/Documents/python-project')
 from flask import Flask
 from dotenv import load_dotenv # 用來讀取 .env 文件中的環境變量
 from flask_mail import Mail
 from models import db, migrate
-# 从 routes 导入蓝图
-from routes import routes_bp, init_app
+from flask_redis import FlaskRedis
+
 
 
 
 # 邮件初始化
 mail = Mail()
 
+# 初始化 Redis 客户端
+redis_client = FlaskRedis()
+
 # 定義 create_app 函數，這是 Flask 的工廠模式，用於創建並配置應用實例
 def create_app():
-
+    
     # 載入 .env 文件中的環境變數
     load_dotenv()
 
@@ -28,6 +33,8 @@ def create_app():
     app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
     app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
     app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
+    app.config['REDIS_URL'] = "redis://localhost:6379/0"  # 設置 Redis 的 URL
+
 
 
     # 配置 PostgreSQL 數據庫 URI
@@ -44,9 +51,15 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     mail.init_app(app)
+    redis_client.init_app(app)
 
+
+    # 从 routes 导入蓝图
+    from routes import routes_bp, init_app
     # 调用 init_app 初始化 LoginManager，調用 routes.py 的 init_app() 函數
     init_app(app)
+
+    
 
     # 注册蓝图
     app.register_blueprint(routes_bp)   

@@ -4,9 +4,10 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_mail import Message
 from datetime import datetime
-from models import Customer, DeliveryPerson, Vendor, db
+from models import Customer, DeliveryPerson, Vendor, MenuItem, CartItem, db
 from authlib.integrations.flask_client import OAuth
 from flask_login import LoginManager
+import json
 
 
 # 创建一个蓝图对象，将路由关联到该蓝图
@@ -46,14 +47,23 @@ def init_app(app):
     login_manager.init_app(app)  # 将其与应用绑定
     login_manager.login_view = 'routes.login_page'  # 设置未登录时的重定向页面
 
-# 根目录路由
+# 根目錄路由
 @routes_bp.route("/")
 def index():
-    return render_template('index.html')
+    vendors = Vendor.query.all()
+    return render_template('index.html', vendors=vendors)
 
-@routes_bp.route("/order")
-def order():
-    return render_template('customer/order.html')
+# 渲染訂單頁面資料
+@routes_bp.route("/order/<int:vendor_id>")
+def order(vendor_id):
+    menu_items = MenuItem.query.filter_by(vendor_id=vendor_id, available=True).all()
+    data = {
+        "vendor_id": vendor_id,
+        "menu_items": menu_items,
+    } 
+    
+    # ** 用於將字典中的內容作為關鍵字參數傳遞給 render_template 函數，以便在模板中訪問這些值
+    return render_template('customer/order.html', **data)
 
 
 # RESTful API 登录端点
@@ -86,17 +96,25 @@ def member_login():
     if user:
         # 仅在用户存在时检查密码是否匹配，是 Werkzeug 提供的函数，用于密码验证
         if check_password_hash(user.password, password):
-            session['role'] = role
+            session['role'] = user.role
             # 如果密码匹配，则登录用户
             login_user(user)
-            print(f"User {user.email} logged in.")
-            return jsonify({"status": "success", "message": "Login successful!", "redirect_url": url_for('routes.dashboard')}), 200
+
+            if user.role == 'customer':
+                return render_template('dashboard.html')  # 直接渲染客户仪表板
+            elif user.role == 'vendor':
+                return render_template('vendor/dashboard.html')  # 直接渲染商家仪表板
+            elif user.role == 'deliveryPerson':
+                return render_template('dashboard.html')  # 直接渲染外送员仪表板
+            
+            flash('登入成功!', category='success')
         else:
             # 如果密码不匹配，则返回错误消息
-            return jsonify({"status": "error", "message": "帳號密碼錯誤"}), 401
+            flash('帳號密碼錯誤', category='danger')
+            return redirect(url_for('login_page'))
     else:
         # 如果用户不存在，则返回错误消息
-        return jsonify({"status": "error", "message": "用戶不存在"}), 401
+        flash('用戶不存在', category='danger')
 
 
 # 消費者返回登录页面
@@ -113,8 +131,16 @@ def login_page():
 def dashboard():
     print(f"Current user: {current_user}")
     if current_user.is_authenticated:
-        print(f"User email: {current_user.email}")  # 输出 email
-        return render_template('dashboard.html', email=current_user.email, user=current_user)
+        # 根据用户角色重定向到不同的 Dashboard
+        if current_user.role == 'customer':
+            return render_template('dashboard.html', email=current_user.email, user=current_user)
+        elif current_user.role == 'vendor':
+            return render_template('vendor/dashboard.html', email=current_user.email, user=current_user)
+        elif current_user.role == 'delivery':
+            return render_template('dashboard.html', email=current_user.email, user=current_user)
+        else:
+            flash('找不到角色', category='danger')
+            return redirect(url_for('routes.login_page'))
     return redirect(url_for('routes.index'))
 
 # 自定义404页面
@@ -302,7 +328,14 @@ def authorize_google():
             # 用户已存在，直接登录
             login_user(user) 
             flash("欢迎回来！", category='success')  # 显示欢迎消息
-            return redirect(url_for('routes.dashboard'))  # 跳转到主页
+            if user.role == 'customer':
+                # 直接重定向到顧客 Dashboard
+                return render_template('dashboard.html')  # 直接渲染商家仪表板
+            elif user.role == 'vendor':
+                # 直接重定向到商家 Dashboard
+                return render_template('vendor/dashboard.html')  # 直接渲染商家仪表板
+            elif user.role == 'delivery':
+                return render_template('dashboard.html')  # 直接渲染商家仪表板
         else:
             flash("用户不存在，请注册。", category='danger')
             return redirect(url_for('routes.register'))  # 跳转到注册页面

@@ -56,3 +56,22 @@ class Address(db.Model):
     city = db.Column(db.String(100), nullable=False)
     postal_code = db.Column(db.String(20), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class MenuItem(db.Model):
+    __tablename__ = 'MenuItem'
+    id = db.Column(db.Integer, primary_key=True)
+    vendor_id = db.Column(db.Integer, db.ForeignKey('Vendor.id'), nullable=False)  # 关联 Vendor 表
+    name = db.Column(db.String(255), nullable=False)
+    price = db.Column(db.Numeric(10, 2), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    available = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class CartItem(db.Model):
+    __tablename__ = 'CartItem'
+    id = db.Column(db.Integer, primary_key=True)
+    cart_id = db.Column(db.Integer, db.ForeignKey('Cart.id'), nullable=False)  # 关联 Cart 表
+    menu_item_id = db.Column(db.Integer, db.ForeignKey('MenuItem.id'), nullable=False)  # 关联 MenuItem 表
+    quantity = db.Column(db.Integer, default=1, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+

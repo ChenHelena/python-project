@@ -1,4 +1,4 @@
-{% extends "shared/base.html" %}
+{% extends "shared/custom_base.html" %}
 <!-- -->
 {% block style %}
 <style>
@@ -99,9 +99,12 @@
       <div class="card">
         <img src="https://via.placeholder.com/400x200" class="card-img-top" alt="Restaurant 2" />
         <div class="card-body">
-          <h5 class="card-title">阿二健康餐點</h5>
+          {% for vendor in vendors %}
+          <h5 class="card-title">{{ vendor.name }}</h5>
           <p class="card-text">美味健康餐點，給你一整天的能量。</p>
-          <a href="#" class="btn btn-primary">立即訂購</a>
+          
+            <a href="{{ url_for("routes.order", vendor_id=vendor.id)}}" class="btn btn-primary">立即訂購</a>
+          {% endfor %}
         </div>
       </div>
     </div>
