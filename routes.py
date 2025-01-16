@@ -50,7 +50,7 @@ def load_user(user_id):
     elif role == 'delivery':
         return DeliveryPerson.query.get(user_id)
 
-# 定义初始化函数
+# 定義初始化函數
 def init_app(app):
     login_manager.init_app(app)  # 将其与应用绑定
     login_manager.login_view = 'routes.login_page'  # 设置未登录时的重定向页面
