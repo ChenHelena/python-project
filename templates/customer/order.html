@@ -100,7 +100,7 @@
               <!--begin::Pos order-->
               <div class="card card-flush bg-body" id="kt_pos_form">
                 <!--begin::Header-->
-                <div class="card-header pt-5">
+                <div class="card-header px-5">
                   <h3 class="card-title fw-bold text-gray-800 fs-2qx">
                     Current Order
                   </h3>
@@ -164,9 +164,9 @@
                       <!--begin::Radio-->
                       <label
                         class="btn bg-light btn-color-gray-600 btn-active-text-gray-800 border border-3 border-gray-100 border-active-primary btn-active-light-primary w-100 px-4"
-                        data-kt-button="true">
+                        data-kt-button="true" for="cash">
                         <!--begin::Input-->
-                        <input class="btn-check" type="radio" name="method" value="0" />
+                        <input class="btn-check" type="radio" name="method" value="0" id="cash" />
                         <!--end::Input-->
                         <!--begin::Icon-->
                         <i class="ki-duotone ki-dollar fs-2hx mb-2 pe-0">
@@ -182,10 +182,10 @@
                       <!--end::Radio-->
                       <!--begin::Radio-->
                       <label
-                        class="btn bg-light btn-color-gray-600 btn-active-text-gray-800 border border-3 border-gray-100 border-active-primary btn-active-light-primary w-100 px-4 active"
-                        data-kt-button="true">
+                        class="btn bg-light btn-color-gray-600 btn-active-text-gray-800 border border-3 border-gray-100 border-active-primary btn-active-light-primary w-100 px-4"
+                        data-kt-button="true" for="card">
                         <!--begin::Input-->
-                        <input class="btn-check" type="radio" name="method" value="1" />
+                        <input class="btn-check" type="radio" name="method" value="1" id="card" />
                         <!--end::Input-->
                         <!--begin::Icon-->
                         <i class="ki-duotone ki-credit-cart fs-2hx mb-2 pe-0">
@@ -201,9 +201,9 @@
                       <!--begin::Radio-->
                       <label
                         class="btn bg-light btn-color-gray-600 btn-active-text-gray-800 border border-3 border-gray-100 border-active-primary btn-active-light-primary w-100 px-4"
-                        data-kt-button="true">
+                        data-kt-button="true" for="linePay">
                         <!--begin::Input-->
-                        <input class="btn-check" type="radio" name="method" value="2" />
+                        <input class="btn-check" type="radio" name="method" value="2" id="linePay" />
                         <!--end::Input-->
                         <!--begin::Icon-->
                         <i class="ki-duotone ki-paypal fs-2hx mb-2 pe-0">
@@ -212,15 +212,15 @@
                         </i>
                         <!--end::Icon-->
                         <!--begin::Title-->
-                        <span class="fs-7 fw-bold d-block">E-Wallet</span>
+                        <span class="fs-7 fw-bold d-block">Line Pay</span>
                         <!--end::Title-->
                       </label>
                       <!--end::Radio-->
                     </div>
                     <!--end::Radio group-->
                     <!--begin::Actions-->
-                    <button class="btn btn-primary fs-1 w-100 py-4">
-                      Print Bills
+                    <button class="btn btn-primary fs-1 w-100 py-4" id="checkoutButton">
+                      結帳
                     </button>
                     <!--end::Actions-->
                   </div>
@@ -279,6 +279,7 @@
 </div>
 {% endblock content %}
 {% block script %}
+
 {{ super() }}
 <script>
   // cartItems 是一個全局變量
@@ -295,6 +296,8 @@
       // 註冊清除購物車的按鈕事件
       document.getElementById('clear-cart').addEventListener('click', clearCart);
       
+      // 註冊結帳按鈕的事件
+      document.getElementById("checkoutButton").addEventListener("click", checkLoginStatus);
 
       // 頁面加載時初始化購物車界面和摘要
       updateCartUI();
@@ -436,6 +439,99 @@
       
       displayFlashMessage('info', '購物車已清空！');
   }
+
+  // 檢查登入狀態
+  function checkLoginStatus() {
+      fetch("/check-login-status", {
+          method: 'GET', 
+          headers: {
+              'Content-Type': 'application/json'
+          },
+      })
+      .then(response => {
+          if (response.redirected) {
+              // 若未登入，會重定向到登入頁面
+              window.location.href = response.url;
+          } else {
+              response.json().then(data => {
+                  if (data.isLoggedIn) {
+                      // 已登入，用戶可以繼續結帳流程
+                      handleCheckout();
+                  }
+              });
+          }
+      })
+      .catch(error => console.error("Error:", error));
+  }
+
+  // 處理結帳邏輯的函數
+  function handleCheckout() {
+    const radioButtons = document.querySelectorAll('input[name="method"]');
+
+    // 为每个 radio button 添加 click 事件监听器
+    radioButtons.forEach(radio => {
+        radio.addEventListener('click', () => {
+            // 清除所有 label 的 active 类
+            const labels = document.querySelectorAll('label');
+
+            labels.forEach(label => {
+                // 移除 active 类
+                label.classList.remove('active');
+            });
+
+            // 添加 active 类到当前被选中的 radio button 的 label
+            const correspondingLabel = document.querySelector(`label[for="${radio.id}"]`);
+            if (correspondingLabel) {
+                correspondingLabel.classList.add('active');
+            }
+        });
+    });
+
+
+      const selectedMethod = document.querySelector('input[name="method"]:checked');
+
+      if (selectedMethod) {
+        if (selectedMethod.value === '2') {
+          processLinePay();
+        }
+      } else {          
+          displayFlashMessage('danger', '未選擇結帳方式');
+      }
+  }
+
+  // 連結 line pay
+  function processLinePay() {
+      // 发起 AJAX 请求到后端 Line Pay 连接
+      fetch("/linepay/request", {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ cart: cartItems })
+      })
+      .then(response => response.json())
+      .then(data => {
+          // 在这里处理成功响应
+          console.log("Line Pay Response:", data);
+          // 可以重定向用户到 Line Pay 页面，假设 `data` 中有一个 `paymentUrl`
+
+          if (data.info && data.info.paymentUrl) {
+              // 根据需要选择使用的 URL
+              const paymentUrl = data.info.paymentUrl.web; // 选择 app 或 web URL
+
+              console.log("Redirecting to:", paymentUrl); // 打印将要重定向的 URL
+              window.location.href = paymentUrl; // 重定向到支付页面
+          } else {
+              console.error("没有找到支付链接");
+          }
+      })
+      .catch(error => {
+          console.error("Error:", error);
+          // 可以在这里显示错误信息给用户
+      });
+  }
+
+ 
 </script>
   
 {% endblock script %}

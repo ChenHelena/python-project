@@ -41,9 +41,7 @@ class Vendor(db.Model, UserMixin):
     email = db.Column(db.String(255), unique=True, nullable=False)
     phone = db.Column(db.String(20), nullable=True)
     password = db.Column(db.String(255), nullable=True)
-    address_id = db.Column(db.Integer, db.ForeignKey(
-        'Address.id'))  # 新增 address_id 外鍵
-    address = db.relationship('Address', backref='vendors')  # 定義關聯關係
+    address_id = db.Column(db.Integer, db.ForeignKey('Address.id')) 
     role = db.Column(db.String(50), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_verified = db.Column(db.Boolean, default=False)
@@ -75,3 +73,33 @@ class CartItem(db.Model):
     quantity = db.Column(db.Integer, default=1, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+class Payment(db.Model):
+    __tablename__ = 'Payment'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    order_id = db.Column(db.String(50), db.ForeignKey('Order.id'), nullable=False)
+    payment_method = db.Column(db.String(50), nullable=False) 
+    payment_status = db.Column(db.String(20), nullable=False) 
+    total_price = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Order(db.Model):
+    __tablename__ = 'Order'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    customer_id = db.Column(db.String(64), db.ForeignKey('Customer.id'), nullable=False)
+    delivery_person_id = db.Column(db.String(64), db.ForeignKey('DeliveryPerson.id'), nullable=True)
+    vendor_id = db.Column(db.String(64), db.ForeignKey('Vendor.id'), nullable=False)
+    total_price = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(20), nullable=False)
+    order_time = db.Column(db.DateTime, default=datetime.utcnow)
+    delivery_time = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class OrderItem(db.Model):
+    __tablename__ = 'OrderItem'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('Order.id'), nullable=False)
+    menu_item_id = db.Column(db.Integer, db.ForeignKey('MenuItem.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    price = db.Column(db.Integer, nullable=False)

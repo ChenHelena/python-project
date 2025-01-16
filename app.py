@@ -24,6 +24,7 @@ def create_app():
 
     app = Flask(__name__)
     app.secret_key = os.getenv('SECRET_KEY')   # 設置應用的密鑰
+    print(f"SECRET_KEY: {app.secret_key}")
 
 
     # 配置郵件設置
@@ -33,7 +34,28 @@ def create_app():
     app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
     app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
     app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
-    app.config['REDIS_URL'] = "redis://localhost:6379/0"  # 設置 Redis 的 URL
+
+    # 設置 Redis 的 URL
+    app.config['REDIS_URL'] = "redis://localhost:6379/0"  
+
+    # 獲取 Line pay id & key
+    app.config['LINE_PAY_ID'] = os.getenv('LINE_PAY_ID')
+    app.config['LINE_PAY_KEY'] = os.getenv('LINE_PAY_KEY')
+
+    # 建立應用程式時配置 OAUTH2_PROVIDERS
+    app.config['OAUTH2_PROVIDERS'] = {
+        'google': {
+            'client_id': os.getenv('GOOGLE_OAUTH_ID'),
+            'client_secret': os.getenv('GOOGLE_OAUTH_KEY'),
+            'authorize_url': 'https://accounts.google.com/o/oauth2/auth',
+            'access_token_url': 'https://oauth2.googleapis.com/token',
+            'refresh_token_url': None,
+            'server_metadata_uri': 'https://accounts.google.com/.well-known/openid-configuration',
+            'jwks_uri': 'https://www.googleapis.com/oauth2/v3/certs',
+            'client_kwargs': {'scope': 'openid profile email'},
+            'redirect_uri': 'http://127.0.0.1:5000/authorize/google'
+        }
+    }
 
 
 

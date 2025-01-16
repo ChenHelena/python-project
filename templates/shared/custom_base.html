@@ -50,7 +50,7 @@
     {% if messages %}
     <div class="alert-container">
       {% for category, message in messages %}
-      <div class="alert alert-{{ category }} alert-dismissible fade show mb-0" role="alert">
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
         {{ message }}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>
@@ -59,7 +59,7 @@
     {% endif %}
     {% endwith %}
   </div>
-  <section class="navbar navbar-light bg-light mb-3">
+  <section class="navbar navbar-light bg-light">
     <div class="container-fluid d-flex">
       <!-- logo start-->
       <div>
@@ -135,9 +135,8 @@
   <script src="https://cdn.metronic.io/demo10/assets/js/scripts.bundle.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/metronic-extension@3.0.9/dist/build.min.js"></script>
   
-  <!-- 客製化other_element 區塊 start  -->
+  
   {% block script %}
-  <!-- 客製化other_element 區塊  end-->
   <script src="{{ url_for('static', filename='js/all.js') }}"></script>
   <script>var defaultThemeMode = "light"; var themeMode; if (document.documentElement) { if (document.documentElement.hasAttribute("data-bs-theme-mode")) { themeMode = document.documentElement.getAttribute("data-bs-theme-mode"); } else { if (localStorage.getItem("data-bs-theme") !== null) { themeMode = localStorage.getItem("data-bs-theme"); } else { themeMode = defaultThemeMode; } } if (themeMode === "system") { themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; } document.documentElement.setAttribute("data-bs-theme", themeMode); }</script>
   {% endblock script %}
