@@ -16,7 +16,7 @@ import base64
 import secrets
 from urllib.parse import urlencode
 
-# 创建一个蓝图对象，将路由关联到该蓝图
+# 建立一個藍圖對象，將路由關聯到該藍圖
 routes_bp = Blueprint('routes', __name__)
 
 oauth = OAuth(current_app)
