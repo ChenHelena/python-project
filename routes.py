@@ -648,7 +648,7 @@ def payment_confirm():
         flash('建立訂單成功!', category='success')
         return redirect(url_for('routes.index'))
     else:
-        # 支付失败，更新支付记录
+        # 付款失敗，更新付款記錄
         payment = Payment.query.filter_by(order_id=order_id).first()
         if payment:
             payment.payment_status = "FAILED"
