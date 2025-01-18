@@ -52,7 +52,7 @@ def load_user(user_id):
 
 # 定義初始化函數
 def init_app(app):
-    login_manager.init_app(app)  # 将其与应用绑定
+    login_manager.init_app(app)  # 將其與應用綁定
     login_manager.login_view = 'routes.login_page'  # 设置未登录时的重定向页面
 
 # 根目錄路由
