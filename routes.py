@@ -632,11 +632,11 @@ def payment_confirm():
     response = requests.post(url, json=body, headers=headers)
     print(f"Confirm Payment Response Status: {response.status_code}, Body: {response.text}")
 
-    # 处理 Line Pay 返回的数据
+    # 處理 Line Pay 傳回的數據
     line_pay_data = response.json()
 
     if line_pay_data.get("returnCode") == "0000":
-        # 创建支付记录
+        # 建立付款記錄
         payment = Payment(
             order_id=order_id,
             payment_method="LINE PAY",
