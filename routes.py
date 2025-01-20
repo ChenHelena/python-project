@@ -628,7 +628,7 @@ def payment_confirm():
         'X-LINE-Authorization': hmac_hash,
     }
 
-    # 发起确认支付请求
+    # 發起確認支付請求
     response = requests.post(url, json=body, headers=headers)
     print(f"Confirm Payment Response Status: {response.status_code}, Body: {response.text}")
 
